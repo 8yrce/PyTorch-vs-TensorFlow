@@ -30,5 +30,5 @@ python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'
 ```
 
 ## Usage
-* Clone the repo and run either the 'PyTorch-MNIST.py'(WIP) or 'TF-MNIST.py' files
+* Clone the repo and run either the 'PyTorch-MNIST.py' or 'TF-MNIST.py' files
 * Output will be in the terminal
