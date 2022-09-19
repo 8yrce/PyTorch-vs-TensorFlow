@@ -1,6 +1,4 @@
 """
-WIP: Need to reinstall PyTorch in a separate environment from TF and retest
-
 PyTorch-MNIST.py
     MNIST model using PyTorch
 Bryce Harrington
@@ -9,16 +7,16 @@ Bryce Harrington
 # base torch dependencies
 import torch
 import torchvision.transforms
-from torch import nn
+from torch import nn, flatten
 from torch.optim import Adam
 from torch.utils.data import random_split, DataLoader
 
 # torchvision data / functions
-#from torchvision.transforms import ToTensor
+from torchvision.transforms import ToTensor
 from torchvision.datasets import KMNIST
 
 # our config file
-from Config import LEARNING_RATE, BATCH_SIZE, EPOCHS, TRAIN_SPLIT, VAL_SPLIT
+from Config import LEARNING_RATE, BATCH_SIZE, EPOCHS, TRAIN_SPLIT
 
 # other necessary packages
 import numpy as np
@@ -29,7 +27,7 @@ from sklearn.metrics import classification_report
 class Network(nn.Module):
     def __init__(self, channels: int, classes: int):
         """
-        Define network layers
+        Define network layers for a LeNet implementation
         """
         # call module constructor
         super(Network, self).__init__()
@@ -69,6 +67,7 @@ class Network(nn.Module):
         input_t = self.max_pool_2(input_t)
 
         # pass output of second layer through our fully connected layers ( so we can converge on an output )
+        input_t = flatten(input_t, 1)
         input_t = self.fc_1(input_t)
         input_t = self.relu_3(input_t)
 
@@ -88,8 +87,9 @@ def train():
     test_data = KMNIST(root="data", train=False, download=True, transform=torchvision.transforms.ToTensor())
 
     # split our data into our test, train and validation sets
+    train_split = int(len(train_data)*TRAIN_SPLIT)
     (train_data, val_data) = random_split(train_data,
-                                          [int(len(train_data)*TRAIN_SPLIT), int(len(train_data)*VAL_SPLIT)],
+                                          [train_split, int(len(train_data) - train_split)],
                                           generator=torch.Generator())
 
     # place our data into our torch data loaders
@@ -99,7 +99,7 @@ def train():
     val_data = DataLoader(val_data, shuffle=True, batch_size=BATCH_SIZE)
 
     # init our previously defined model
-    model = Network(channels=1, classes=len(train_data.dataset.classes)).to(compute_device)
+    model = Network(channels=1, classes=len(train_data.dataset.dataset.classes)).to(compute_device)
 
     # set out optimizer and loss
     model_opt = Adam(model.parameters(), lr=LEARNING_RATE)
@@ -169,11 +169,11 @@ def train():
         output = []
         for (data, label) in test_data:
             # once more, make sure it's sent to our compute device of choice
-            (data, label) = (data.to(compute_device), label.to(compute_device))
+            data = data.to(compute_device)
 
             # save our output to, well 'output' above
-            output = model(data)
-            output.extend(output.argmax(axis=1).cpu().numpy())
+            outputs = model(data)
+            output.extend(outputs.argmax(axis=1).cpu().numpy())
 
     # generate and output classification report
     print(classification_report(o_test_data.targets.cpu().numpy(), np.array(output), target_names=o_test_data.classes))
